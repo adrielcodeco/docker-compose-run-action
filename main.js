@@ -17,12 +17,34 @@ try {
     commandOptions: utils.parseFlags(core.getInput('run-flags')),
   }
 
-  compose.run(service, core.getInput('command') || [], options)
+  compose
+    .run(service, core.getInput('command') || [], options)
     .then(() => {
       console.log('done !!!')
     })
     .catch(err => {
       core.setFailed(`compose run failed ${JSON.stringify(err)}`)
+    })
+    .finally(() => {
+      try {
+        const options = {
+          config: composeFiles,
+          log: true,
+          composeOptions: utils.parseFlags(core.getInput('compose-flags')),
+          commandOptions: utils.parseFlags(core.getInput('down-flags')),
+        }
+
+        compose.down(options).then(
+          () => {
+            console.log('compose removed')
+          },
+          err => {
+            core.setFailed(`compose down failed ${err}`)
+          },
+        )
+      } catch (error) {
+        core.setFailed(error.message)
+      }
     })
 } catch (error) {
   core.setFailed(error.message)
